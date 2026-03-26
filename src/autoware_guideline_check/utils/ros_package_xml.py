@@ -28,6 +28,15 @@ class RosPackageXmlEdit:
             self.type = type  # depend type or text if empty
             self.pkgs = set()
 
+    @staticmethod
+    def _find_first_uncommented_depend_match(pattern, line: str):
+        """Return the first depend match whose opening '<' is not the start of <!--."""
+        for m in pattern.finditer(line):
+            if line[m.start() : m.start() + 4] == "<!--":
+                continue
+            return m
+        return None
+
     def __init__(self, path: pathlib.Path):
         self._path = path
         self._depends = {}
@@ -36,7 +45,7 @@ class RosPackageXmlEdit:
         pattern = re.compile(r"<(.*?depend)>(.*?)</.*?depend>")
         lines = path.read_text().split("\n")
         for line in lines:
-            match = pattern.search(line)
+            match = self._find_first_uncommented_depend_match(pattern, line)
             if not match:
                 self._content.append(self.Line(text=line))
                 continue
